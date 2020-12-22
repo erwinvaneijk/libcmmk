@@ -8,33 +8,33 @@
 
 static void hexdump(void const *ptr, size_t buflen)
 {
-        unsigned char *buf = (unsigned char*)ptr;
-        size_t i;
-        size_t j;
+    unsigned char *buf = (unsigned char *)ptr;
+    size_t i;
+    size_t j;
 
-        printf("        0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
-        for (i = 0; i < buflen; i += 16) {
-                printf("%06lx: ", i);
+    printf("        0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
+    for (i = 0; i < buflen; i += 16) {
+        printf("%06lx: ", i);
 
-                for (j = 0; j < 16; j++) {
-                        if (i+j < buflen) {
-                                printf("%02x ", buf[i+j]);
-                        } else {
-                                printf("   ");
-                        }
-                }
-
-                printf(" ");
-
-                for (j = 0; j < 16; j++) {
-                        if (i+j < buflen) {
-                                printf("%c", isprint(buf[i+j]) ? buf[i+j] : '.');
-                        }
-                }
-
-                printf("\n");
+        for (j = 0; j < 16; j++) {
+            if (i + j < buflen) {
+                printf("%02x ", buf[i + j]);
+            } else {
+                printf("   ");
+            }
         }
-        printf("        0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
+
+        printf(" ");
+
+        for (j = 0; j < 16; j++) {
+            if (i + j < buflen) {
+                printf("%c", isprint(buf[i + j]) ? buf[i + j] : '.');
+            }
+        }
+
+        printf("\n");
+    }
+    printf("        0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F\n");
 }
 
 int test_handshake1(struct cmmk *dev)

@@ -114,71 +114,30 @@ int test_multilayer(struct cmmk *dev)
 	return 0;
 }
 
-int test_seq_numbers(struct cmmk *dev)
-{
-	/* Sequential demo.
-	 *
-	 * Lights up every key once, starting from key 1 to key max
-	 */
-	struct rgb offcolor = MKRGB(0x000000);
-	struct rgb on_color = MKRGB(0xffffff);
-	cmmk_set_control_mode(dev, CMMK_MANUAL);
-	cmmk_set_all_single(dev, &offcolor);
-    for (int key = 0; key < 255; key++) {
-        if (g_stop) {
-           return 1;
-        }
-		printf("Key: %d\n", key);
-        cmmk_set_single_key_by_id(dev, key, &on_color);
-        sleep_ms(5000);
-        cmmk_set_single_key_by_id(dev, key, &offcolor);
-    }
-    return CMMK_OK;
-}
-
-int test_seq(struct cmmk *dev) {
-    /* Sequential demo.
-     *
-     * Lights up every key once, starting on the left and moving horizontally, row by row.
-     */
-    struct rgb off_color = MKRGB(0x000000);
-    struct rgb on_color = MKRGB(0xffffff);
-    cmmk_set_control_mode(dev, CMMK_MANUAL);
-    cmmk_set_all_single(dev, &off_color);
-    for (int row = 0; row < 7; ++row) {
-        for (int col = 0; col < 22; ++col) {
-            if (g_stop) {
-                return 1;
-            }
-            int key = cmmk_lookup_key_id(dev, row, col);
-            if (key != -1) {
-                cmmk_set_single_key(dev, row, col, &on_color);
-                sleep_ms(250);
-                cmmk_set_single_key(dev, row, col, &off_color);
-            }
-        }
-    }
-    return 0;
-}
-
 int test_effects(struct cmmk *dev)
 {
-    struct cmmk_effect_wave wave;
     int err;
 
-	wave.direction = 1;
-	wave.speed = 10;
+    fprintf(stderr, "Starting effects testing\n");
+
+    struct cmmk_effect_wave wave = {
+        .speed = 0x20, .direction = CMMK_LEFT_TO_RIGHT, .start = MKRGB(0xffffff)};
 
     if ((err = cmmk_set_effect_wave(dev, &wave)) < 0) {
         fprintf(stderr, "Could not set effect: %d\n", err);
-		return CMMK_ERR;
-	}
-	fprintf(stdout, "Setting wave effect\n");
-	cmmk_set_active_effect(dev, CMMK_EFFECT_WAVE);
-	sleep(10);
-    cmmk_set_active_effect(dev, CMMK_EFFECT_OFF);
+        return CMMK_ERR;
+    }
 
-	return CMMK_OK;
+    cmmk_set_control_mode(dev, CMMK_EFFECT);
+
+    struct cmmk_effect_breathe breathe = {.color = MKRGB(0xff0000), .speed = CMMK_SPEED0};
+	cmmk_set_effect_breathe(dev, &breathe);
+	cmmk_set_active_effect(dev, CMMK_EFFECT_BREATHE);
+	sleep_ms(5000);
+
+    fprintf(stderr, "Done\n");
+    cmmk_set_active_effect(dev, CMMK_EFFECT_OFF);
+    return CMMK_OK;
 }
 
 int main(int argc, char** argv)
@@ -206,20 +165,7 @@ int main(int argc, char** argv)
 	signal(SIGINT, interrupted);
 #endif
 
-	test_multilayer(&state);
-
-/* 	printf("Enumerate the numbers. Pay attention.\n");
-    sleep(1);
-	test_seq_numbers(&state);
- */
-
 	test_effects(&state);
-
-	g_stop = 0;
-
-	while (!g_stop) {
-		test_seq(&state);
-	}
 
 	cmmk_set_control_mode(&state, CMMK_FIRMWARE);
 	cmmk_detach(&state);

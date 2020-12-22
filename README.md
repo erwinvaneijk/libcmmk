@@ -13,6 +13,7 @@ The currently supported and known to work devices include:
 
  * MasterKeys Pro L, (US & EU / German)
  * MasterKeys Pro S, (US only)
+ * MasterKeys MK730, (US only)
  * MasterKeys MK750, (US / EU / German only)
  * MasterKeys SK630, (EU only)
  * MasterKeys SK650, (EU only)

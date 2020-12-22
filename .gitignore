@@ -1,3 +1,8 @@
 *.o
 out/
+build/.clang-format
 build/
+.history/
+.vscode/
+.cache/
+.clang-format

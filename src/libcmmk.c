@@ -34,12 +34,14 @@ typedef int16_t keyboard_layout[CMMK_ROWS_MAX][CMMK_COLS_MAX];
 
 #include "mappings/iso/pro_s.h"
 #include "mappings/iso/pro_l.h"
+#include "mappings/iso/mk730.h"
 #include "mappings/iso/mk750.h"
 #include "mappings/iso/sk630.h"
 #include "mappings/iso/sk650.h"
 
 #include "mappings/ansi/pro_s.h"
 #include "mappings/ansi/pro_l.h"
+#include "mappings/ansi/mk730.h"
 #include "mappings/ansi/mk750.h"
 #include "mappings/ansi/sk630.h"
 #include "mappings/ansi/sk650.h"
@@ -47,6 +49,7 @@ typedef int16_t keyboard_layout[CMMK_ROWS_MAX][CMMK_COLS_MAX];
 static keyboard_layout const *keyboard_layouts[] = {
 	[CMMK_LAYOUT_US_S] = &layout_ansi_pro_s,
 	[CMMK_LAYOUT_US_L] = &layout_ansi_pro_l,
+	[CMMK_LAYOUT_US_MK730] = &layout_ansi_mk730,
 	[CMMK_LAYOUT_US_MK750] = &layout_ansi_mk750,
 	[CMMK_LAYOUT_US_SK630] = &layout_ansi_sk630,
 	[CMMK_LAYOUT_US_SK650] = &layout_ansi_sk650,
@@ -204,6 +207,7 @@ int cmmk_find_device(int *product)
 	static int supported_devices[] = {
 		CMMK_USB_MASTERKEYS_PRO_L,
 		CMMK_USB_MASTERKEYS_PRO_S,
+		CMMK_USB_MASTERKEYS_MK730,
 		CMMK_USB_MASTERKEYS_MK750,
 		CMMK_USB_MASTERKEYS_PRO_L_WHITE,
 		CMMK_USB_MASTERKEYS_SK630,
@@ -242,7 +246,7 @@ static int cmmk_try_determine_layout(struct cmmk *dev, int product)
 	enum cmmk_product_type device_model;
 
 	if (cmmk_get_firmware_version(dev, fw, sizeof(fw)) == 0) {
-		if (fw[0] == '1') {
+		if (fw[0] == 0x01) {
 			/* ANSI firmware */
 			general_layout = CMMK_LAYOUT_TYPE_ANSI;
 		} else {
@@ -254,6 +258,7 @@ static int cmmk_try_determine_layout(struct cmmk *dev, int product)
 		case CMMK_USB_MASTERKEYS_PRO_L:
 		case CMMK_USB_MASTERKEYS_PRO_L_WHITE: device_model = CMMK_PRODUCT_MASTERKEYS_PRO_L; break;
 		case CMMK_USB_MASTERKEYS_PRO_S: device_model = CMMK_PRODUCT_MASTERKEYS_PRO_S; break;
+		case CMMK_USB_MASTERKEYS_MK730: device_model = CMMK_PRODUCT_MASTERKEYS_MK730; break;
 		case CMMK_USB_MASTERKEYS_MK750: device_model = CMMK_PRODUCT_MASTERKEYS_MK750; break;
 		case CMMK_USB_MASTERKEYS_SK630: device_model = CMMK_PRODUCT_MASTERKEYS_SK630; break;
 		case CMMK_USB_MASTERKEYS_SK650: device_model = CMMK_PRODUCT_MASTERKEYS_SK650; break;
@@ -263,6 +268,7 @@ static int cmmk_try_determine_layout(struct cmmk *dev, int product)
 		switch (device_model) {
 			case CMMK_PRODUCT_MASTERKEYS_PRO_L: return CMMK_LAYOUT_US_L;
 			case CMMK_PRODUCT_MASTERKEYS_PRO_S: return CMMK_LAYOUT_US_S;
+			case CMMK_PRODUCT_MASTERKEYS_MK730: return CMMK_LAYOUT_US_MK730;
 			case CMMK_PRODUCT_MASTERKEYS_MK750: return CMMK_LAYOUT_US_MK750;
 			case CMMK_PRODUCT_MASTERKEYS_SK630: return CMMK_LAYOUT_US_SK630;
 			case CMMK_PRODUCT_MASTERKEYS_SK650: return CMMK_LAYOUT_US_SK630;
@@ -271,6 +277,7 @@ static int cmmk_try_determine_layout(struct cmmk *dev, int product)
 		switch (device_model) {
 			case CMMK_PRODUCT_MASTERKEYS_PRO_L: return CMMK_LAYOUT_EU_L;
 			case CMMK_PRODUCT_MASTERKEYS_PRO_S: return CMMK_LAYOUT_EU_S;
+			case CMMK_PRODUCT_MASTERKEYS_MK730: return CMMK_LAYOUT_EU_MK730;
 			case CMMK_PRODUCT_MASTERKEYS_MK750: return CMMK_LAYOUT_EU_MK750;
 			case CMMK_PRODUCT_MASTERKEYS_SK630: return CMMK_LAYOUT_EU_SK630;
 			case CMMK_PRODUCT_MASTERKEYS_SK650: return CMMK_LAYOUT_EU_SK650;
@@ -369,6 +376,10 @@ int cmmk_force_layout(struct cmmk *dev, int layout)
 
 	keyboard_layout = keyboard_layouts[dev->layout];
 
+    if (keyboard_layout == NULL) {
+		return CMMK_ERR;
+	}
+
 	for (i = 0; i < CMMK_ROWS_MAX; ++i) {
 		for (j = 0; j < CMMK_COLS_MAX; ++j) {
 			int p = (*keyboard_layout)[i][j];
@@ -415,6 +426,10 @@ enum cmmk_product_type cmmk_get_device_model(struct cmmk *dev)
 	case CMMK_LAYOUT_EU_L:
 		return CMMK_PRODUCT_MASTERKEYS_PRO_L;
 
+	case CMMK_LAYOUT_US_MK730:
+	case CMMK_LAYOUT_EU_MK730:
+		return CMMK_PRODUCT_MASTERKEYS_MK730;
+
 	case CMMK_LAYOUT_US_MK750:
 	case CMMK_LAYOUT_EU_MK750:
 		return CMMK_PRODUCT_MASTERKEYS_MK750;
@@ -428,11 +443,13 @@ enum cmmk_layout_type cmmk_get_device_layout(struct cmmk *dev)
 	switch (dev->layout) {
 	case CMMK_LAYOUT_US_S:
 	case CMMK_LAYOUT_US_L:
+	case CMMK_LAYOUT_US_MK730:
 	case CMMK_LAYOUT_US_MK750:
 		return CMMK_LAYOUT_TYPE_ANSI;
 
 	case CMMK_LAYOUT_EU_S:
 	case CMMK_LAYOUT_EU_L:
+	case CMMK_LAYOUT_EU_MK730:
 	case CMMK_LAYOUT_EU_MK750:
 		return CMMK_LAYOUT_TYPE_ISO;
 	}
@@ -446,6 +463,7 @@ const char * cmmk_product_to_str(int product)
 		case CMMK_USB_MASTERKEYS_PRO_S: return "Cooler Master Masterkeys Pro S";
 		case CMMK_USB_MASTERKEYS_PRO_L: return "Cooler Master Masterkeys Pro L";
 		case CMMK_USB_MASTERKEYS_PRO_L_WHITE: return "Cooler Master Masterkeys Pro L White";
+		case CMMK_USB_MASTERKEYS_MK730: return "Cooler Master Masterkeys MK730";
 		case CMMK_USB_MASTERKEYS_MK750: return "Cooler Master Masterkeys MK750";
 		case CMMK_USB_MASTERKEYS_SK630: return "Cooler Master Masterkeys SK630";
 		case CMMK_USB_MASTERKEYS_SK650: return "Cooler Master Masterkeys SK650";
@@ -459,12 +477,14 @@ const char * cmmk_layout_to_str(int layout)
 	switch ((enum cmmk_layout) layout) {
 		case CMMK_LAYOUT_US_S:
 		case CMMK_LAYOUT_US_L:
+		case CMMK_LAYOUT_US_MK730:
 		case CMMK_LAYOUT_US_MK750:
 		case CMMK_LAYOUT_US_SK630:
 		case CMMK_LAYOUT_US_SK650:
 			return "US";
 		case CMMK_LAYOUT_EU_S:
 		case CMMK_LAYOUT_EU_L:
+		case CMMK_LAYOUT_EU_MK730:
 		case CMMK_LAYOUT_EU_MK750:
 		case CMMK_LAYOUT_EU_SK630:
 		case CMMK_LAYOUT_EU_SK650:
